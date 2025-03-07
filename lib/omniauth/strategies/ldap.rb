@@ -46,10 +46,10 @@ module OmniAuth
         return fail!(:invalid_request_method) unless valid_request_method?
         return fail!(:missing_credentials) if missing_credentials?
         begin
-          @ldap_user_info = @adaptor.bind_as(:filter => filter(@adaptor), :size => 1, :password => request['password'])
+          @ldap_user_info = @adaptor.bind_as(:filter => filter(@adaptor), :size => 1, :password => request_params['password'])
 
           unless @ldap_user_info
-            return fail!(:invalid_credentials, InvalidCredentialsError.new("Invalid credentials for #{request['username']}"))
+            return fail!(:invalid_credentials, InvalidCredentialsError.new("Invalid credentials for #{request_params['username']}"))
           end
 
           @user_info = self.class.map_user(@@config, @ldap_user_info)
@@ -61,10 +61,10 @@ module OmniAuth
 
       def filter(adaptor)
         if adaptor.filter and !adaptor.filter.empty?
-          username = Net::LDAP::Filter.escape(@options[:name_proc].call(request['username']))
+          username = Net::LDAP::Filter.escape(@options[:name_proc].call(request_params['username']))
           Net::LDAP::Filter.construct(adaptor.filter % { username: username })
         else
-          Net::LDAP::Filter.equals(adaptor.uid, @options[:name_proc].call(request['username']))
+          Net::LDAP::Filter.equals(adaptor.uid, @options[:name_proc].call(request_params['username']))
         end
       end
 
@@ -107,8 +107,12 @@ module OmniAuth
       end
 
       def missing_credentials?
-        request['username'].nil? or request['username'].empty? or request['password'].nil? or request['password'].empty?
+        request_params['username'].nil? or request_params['username'].empty? or request_params['password'].nil? or request_params['password'].empty?
       end # missing_credentials?
+
+      def request_params
+        request.respond_to?(:params) ? request.params : request
+      end
     end
   end
 end
